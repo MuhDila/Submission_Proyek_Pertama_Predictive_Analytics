@@ -40,28 +40,66 @@ Namun, banyak faktor yang mempengaruhi lamanya penonton menyaksikan sebuah video
 ## Data Understanding
 Dataset yang digunakan dalam proyek ini adalah data video yang sedang trending di YouTube Indonesia, diambil dari [Kaggle: Indonesia's Trending YouTube Video Statistics](https://www.kaggle.com/datasets/syahrulhamdani/indonesias-trending-youtube-video-statistics). Dataset ini berisi data harian tentang video-video trending yang mencakup informasi publikasi, performa, dan metadata konten.
 
-### Informasi Dataset
+### Jumlah Data
+Dataset ini memiliki:
 
-- **Jumlah entri (baris):** 172.347
-- **Jumlah fitur (kolom):** 28
-- **Beberapa kolom mengandung nilai kosong**, terutama di `description`, `tags`, `like`, `comment`, `allowed_region`, dan `blocked_region`.
-- Dataset terdiri dari fitur kategorikal (`category_name`, `publish_day`, dsb.) dan numerik (`view`, `like`, `comment`, `publish_hour`, dsb.)
+- **Jumlah baris:** 172.347 baris
+- **Jumlah kolom:** 28 kolom
+
+Jumlah baris merepresentasikan banyaknya data video yang tercatat harian sebagai trending,
+sedangkan kolom mencakup berbagai atribut terkait metadata dan performa video.
+
+### Kondisi Data
+
+Hasil pemeriksaan kondisi data menunjukkan:
+
+- **Missing Value:**
+  - Terdapat missing values pada beberapa kolom penting seperti `description`, `tags`, `thumbnail_url`, `view`, `like`, `comment`, dan `category_name`.
+  - Kolom `allowed_region` dan `blocked_region` memiliki jumlah missing value yang sangat tinggi (>90% dari data).
+
+- **Duplikasi:**
+  - Terdapat duplikasi sejumlah **~0** baris, namun pengecekan tetap dilakukan untuk memastikan keunikan data.
+
+- **Outlier:**
+  - Fitur numerik seperti `view` dan `like` menunjukkan adanya outlier ekstrem, dengan sebagian kecil video mencapai views sangat tinggi dibandingkan mayoritas video lainnya.
+  - Distribusi views dan likes berbentuk **right-skewed** berdasarkan hasil visualisasi histogram logaritmik.
+
+Penanganan lebih lanjut terhadap missing values, duplikasi akan dilakukan pada tahap **Data Preparation**.
 
 ### Deskripsi Fitur (Variabel)
 
-Beberapa fitur penting yang tersedia dalam dataset:
-- `view`: jumlah penayangan video
-- `like`: jumlah likes yang diterima video
-- `comment`: jumlah komentar yang diberikan
-- `category_id`: ID kategori video (dipetakan menjadi `category_name`)
-- `publish_time`: waktu saat video diunggah
-- `trending_time`: waktu saat video masuk daftar trending
-- `channel_name`: nama channel yang mengunggah video
-- `tags`, `description`: metadata tambahan
-- `publish_hour`: jam unggahan (hasil ekstraksi dari `publish_time`)
-- `publish_day`: hari unggahan (hasil ekstraksi dari `publish_time`)
+| No | Fitur | Deskripsi |
+|:--|:--|:--|
+| 1 | `video_id` | ID unik video YouTube |
+| 2 | `publish_time` | Waktu unggahan video |
+| 3 | `channel_id` | ID unik channel pengunggah |
+| 4 | `title` | Judul video |
+| 5 | `description` | Deskripsi video |
+| 6 | `thumbnail_url` | URL gambar thumbnail video |
+| 7 | `thumbnail_width` | Lebar thumbnail video |
+| 8 | `thumbnail_height` | Tinggi thumbnail video |
+| 9 | `channel_name` | Nama channel pengunggah |
+| 10 | `tags` | Tag terkait video |
+| 11 | `category_id` | ID kategori video (numerik) |
+| 12 | `live_status` | Status apakah video live stream |
+| 13 | `local_title` | Judul video dalam bahasa lokal |
+| 14 | `local_description` | Deskripsi video dalam bahasa lokal |
+| 15 | `duration` | Durasi video (format ISO 8601) |
+| 16 | `dimension` | Dimensi video (2d atau 3d) |
+| 17 | `definition` | Resolusi video (standard/hd) |
+| 18 | `caption` | Indikator apakah video memiliki caption |
+| 19 | `license_status` | Status lisensi video |
+| 20 | `allowed_region` | Negara di mana video diperbolehkan tampil |
+| 21 | `blocked_region` | Negara di mana video diblokir |
+| 22 | `view` | Jumlah views video |
+| 23 | `like` | Jumlah likes video |
+| 24 | `dislike` | Jumlah dislikes video |
+| 25 | `favorite` | Jumlah favorit video (umumnya 0 setelah 2018) |
+| 26 | `comment` | Jumlah komentar video |
+| 27 | `trending_time` | Waktu video tercatat trending |
+| 28 | `category_name` | Nama kategori video berdasarkan `category_id` |
 
-### Eksplorasi dan Visualisasi Data
+### Eksplorasi Data
 
 Untuk memahami pola distribusi dan hubungan antar variabel, dilakukan beberapa visualisasi eksploratif:
 
@@ -71,6 +109,28 @@ Untuk memahami pola distribusi dan hubungan antar variabel, dilakukan beberapa v
 - Distribusi views berdasarkan `category_name` menunjukkan bahwa kategori seperti **Music, Entertainment, dan Sports** mendominasi jumlah penayangan dengan persebaran yang luas.
 
 > *Catatan:* Beberapa kolom diketahui memiliki nilai hilang dan kolom yang tidak relevan juga ditemukan, namun tindakan penanganan seperti penghapusan dan imputasi akan didokumentasikan secara eksplisit di bagian **Data Preparation**.
+
+## Visualisasi Data
+
+Beberapa visualisasi eksploratif dilakukan untuk memahami pola data:
+
+- **Distribusi Views dan Likes:**
+  Menunjukkan pola distribusi yang sangat right-skewed, di mana sebagian besar video memiliki performa menengah hingga rendah, sementara hanya sebagian kecil video yang benar-benar viral.
+ ![Distribusi Views dan Likes](output_image/Distribusi Jumlah Views.png)
+ ![Distribusi Views dan Likes](output_image/Distribusi Jumlah Likes.png)
+- **Distribusi Publish Hour:**
+  Sebagian besar video diunggah antara **pukul 08.00 hingga 13.00**, menunjukkan waktu populer untuk mengunggah konten.
+  ![Distribusi Views dan Likes](output_image/Distribusi Jam Publikasi Video.png)
+
+- **Korelasi antar Fitur Numerik:**
+  Terdapat korelasi kuat antara `views` dan `likes` (0.88), serta `likes` dan `comment` (0.70). Ini menandakan bahwa engagement (likes dan comments) memiliki keterkaitan kuat dengan popularitas video.
+ ![Distribusi Views dan Likes](output_image/Korelasi antar Fitur Numerik.png)
+
+- **Distribusi Views per Kategori:**
+  Kategori seperti **Music**, **Entertainment**, dan **Sports** memiliki persebaran views yang lebih tinggi dibandingkan kategori lainnya.
+  ![Distribusi Views dan Likes](output_image/Distribusi Views per Kategori.png)
+
+**Catatan:** Beberapa kolom ditemukan memiliki nilai kosong (missing values) dan terdapat kolom yang kurang relevan. Tindakan penanganan missing values dan pembersihan data akan dibahas lebih rinci pada bagian **Data Preparation**.
 
 ### Insight Awal
 
