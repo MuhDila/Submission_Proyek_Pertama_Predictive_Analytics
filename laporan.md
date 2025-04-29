@@ -116,19 +116,18 @@ Beberapa visualisasi eksploratif dilakukan untuk memahami pola data:
 
 - **Distribusi Views dan Likes:**
   Menunjukkan pola distribusi yang sangat right-skewed, di mana sebagian besar video memiliki performa menengah hingga rendah, sementara hanya sebagian kecil video yang benar-benar viral.
- ![Distribusi Views dan Likes](output_image/Distribusi Jumlah Views.png)
- ![Distribusi Views dan Likes](output_image/Distribusi Jumlah Likes.png)
+ ![Distribusi Views dan Likes](output_image/Distribusi%20Jumlah%20Likes.png)
 - **Distribusi Publish Hour:**
   Sebagian besar video diunggah antara **pukul 08.00 hingga 13.00**, menunjukkan waktu populer untuk mengunggah konten.
-  ![Distribusi Views dan Likes](output_image/Distribusi Jam Publikasi Video.png)
+  ![Distribusi Views dan Likes](output_image/Distribusi%20Jam%20Publikasi%20Video.png)
 
 - **Korelasi antar Fitur Numerik:**
   Terdapat korelasi kuat antara `views` dan `likes` (0.88), serta `likes` dan `comment` (0.70). Ini menandakan bahwa engagement (likes dan comments) memiliki keterkaitan kuat dengan popularitas video.
- ![Distribusi Views dan Likes](output_image/Korelasi antar Fitur Numerik.png)
+ ![Distribusi Views dan Likes](output_image/Korelasi%20antar%20Fitur%20Numerik.png)
 
 - **Distribusi Views per Kategori:**
   Kategori seperti **Music**, **Entertainment**, dan **Sports** memiliki persebaran views yang lebih tinggi dibandingkan kategori lainnya.
-  ![Distribusi Views dan Likes](output_image/Distribusi Views per Kategori.png)
+  ![Distribusi Views dan Likes](output_image/Distribusi%20Views%20per%20Kategori.png)
 
 **Catatan:** Beberapa kolom ditemukan memiliki nilai kosong (missing values) dan terdapat kolom yang kurang relevan. Tindakan penanganan missing values dan pembersihan data akan dibahas lebih rinci pada bagian **Data Preparation**.
 
