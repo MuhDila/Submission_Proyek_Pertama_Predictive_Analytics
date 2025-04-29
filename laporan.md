@@ -143,62 +143,84 @@ Beberapa visualisasi eksploratif dilakukan untuk memahami pola data:
 
 ## Data Preparation
 
-Tahapan data preparation dilakukan secara berurutan dengan tujuan untuk membersihkan data, menghindari error saat training, dan memastikan data dalam format optimal untuk modeling. Seluruh proses ini telah diimplementasikan secara eksplisit di notebook.
+Tahapan data preparation dilakukan untuk membersihkan data, membuat fitur baru, dan memastikan data siap untuk digunakan dalam modeling. Seluruh langkah ini diimplementasikan secara berurutan seperti berikut:
 
-### 1. Konversi Waktu Publikasi
+### 1. Pembersihan Data Awal
 
-**Teknik:** `pd.to_datetime()` dan `.dt.hour`  
-**Tujuan:** Mengubah kolom `publish_time` ke format datetime lalu mengekstrak `publish_hour`. Informasi waktu publikasi dianggap berdampak terhadap pola penayangan video.
+**Teknik:** `drop(columns=[...])`, imputasi `fillna()`
 
-### 2. Penghapusan Kolom Tidak Relevan
+- Menghapus kolom `video_id`, `thumbnail_url`, `thumbnail_width`, dan `thumbnail_height` karena tidak berkontribusi dalam analisis performa video.
+- Mengisi nilai kosong pada kolom `description` dan `tags` dengan string default ("No description" dan "No tags").
 
-**Teknik:** `drop(columns=[...])`  
-**Kolom yang dihapus:**
-- Metadata visual: `thumbnail_url`, `thumbnail_width`, `thumbnail_height`
-- Identitas channel: `channel_id`, `category_id`, `channel_name`
-- Metadata teks: `description`, `tags`, `title`, `local_title`, `local_description`
-- Informasi teknis: `caption`, `definition`, `dimension`, `duration`, `license_status`
-- Informasi administratif: `allowed_region`, `blocked_region`, `live_status`
-- Kolom tidak relevan lainnya: `favorite`, `dislike`, `publish_time`, `trending_time`
+**Tujuan:** Mengurangi noise dan mencegah error akibat nilai kosong pada fitur teks.
 
-**Alasan:** Kolom tersebut tidak berkontribusi langsung dalam prediksi dan sebagian besar bertipe object atau terlalu sparsely populated.
+---
 
-### 3. Penanganan Nilai Hilang
+### 2. Pembuatan Fitur Waktu dari `publish_time`
 
-**Teknik:** `dropna()`  
-**Tujuan:** Menghapus baris yang masih mengandung nilai kosong setelah pembersihan kolom. Hal ini penting untuk mencegah error saat training dan memastikan data model bersih.
+**Teknik:** `pd.to_datetime()`, `.dt.hour`, `.dt.day_name()`
 
-### 4. Feature Engineering
+- Mengubah `publish_time` menjadi format datetime.
+- Membuat dua fitur baru:
+  - `publish_hour` (jam publikasi 0–23)
+  - `publish_day` (nama hari publikasi)
 
-- `publish_hour`: fitur numerik hasil ekstraksi waktu upload
-- `engagement_score`: dihitung dari `(like + comment) / view`
-- `watch_time_proxy`: dihitung dari `view * engagement_score`
+**Tujuan:** Menangkap pola perilaku waktu unggah video yang relevan dengan performa konten.
 
-`watch_time_proxy` digunakan sebagai **target (`y`)** dalam pemodelan karena tidak tersedia kolom durasi tonton aktual.
+---
 
-### 5. One-Hot Encoding Fitur Kategorikal
+### 3. Pembuatan Engagement Score dan Watch Time Proxy
 
-**Teknik:** `pd.get_dummies()`  
-**Kolom yang diencoding:** `category_name`, `publish_day`  
-**Hasil:** Kolom seperti `cat_Music`, `day_Sunday`, dst.
+**Teknik:** perhitungan numerik sederhana
 
-**Alasan:** One-hot encoding mengubah data kategorikal menjadi numerik tanpa memberi bobot/hierarki, sesuai dengan nature data.
+- Menghapus baris dengan `views = 0` untuk menghindari pembagian dengan nol.
+- Membuat `engagement_score` = (`likes` + `comments`) / `views`.
+- Membuat `watch_time_proxy` = `views * engagement_score`.
 
-### 6. Pemisahan Data Latih dan Uji
+**Tujuan:** Mengestimasi tingkat keterlibatan dan durasi tonton video sebagai target prediksi.
 
-**Teknik:** `train_test_split(test_size=0.2)`  
-**Alasan:** Data dibagi 80% untuk pelatihan dan 20% untuk pengujian guna menghindari overfitting dan mengevaluasi generalisasi model.
+---
+
+### 4. One-Hot Encoding Fitur Kategorikal
+
+**Teknik:** `pd.get_dummies()`
+
+- Melakukan one-hot encoding terhadap kolom `category_name` dan `publish_day`.
+- Menghapus kolom kategorikal aslinya untuk menghindari redundansi.
+
+**Tujuan:** Mengubah fitur kategorikal menjadi format numerik biner untuk kompatibilitas dengan algoritma machine learning.
+
+---
+
+### 5. Menyiapkan Dataset untuk Modeling
+
+**Teknik:** `drop(columns=[...])`, `dropna()`
+
+- Menghapus fitur bertipe object atau fitur yang tidak relevan untuk modeling numerik.
+- Menghapus baris-baris yang masih memiliki nilai kosong (NaN).
+
+**Tujuan:** Membuat dataset bersih dan numerik, siap untuk training model.
+
+---
+
+### 6. Memisahkan Fitur dan Target serta Membagi Data Training dan Testing
+
+**Teknik:** `train_test_split(test_size=0.2)`
+
+- Memisahkan `X` (fitur) dan `y` (`watch_time_proxy`).
+- Membagi data menjadi 80% untuk training dan 20% untuk testing.
+
+**Tujuan:** Membantu model belajar dari sebagian data dan menguji performanya pada data baru.
+
+---
 
 ### 7. Standarisasi Fitur Numerik
 
-**Fitur:** `view`, `publish_hour`  
-**Teknik:** `StandardScaler` dari Scikit-learn  
-**Alasan:** Standarisasi diperlukan karena kedua fitur memiliki skala yang berbeda dan bisa memengaruhi performa model regresi.
+**Teknik:** `StandardScaler` dari Scikit-learn
 
-Langkah-langkah ini bertujuan untuk memastikan:
-- Data bersih dari noise dan null
-- Fitur memiliki skala dan format yang tepat
-- Model dapat dilatih secara stabil dan optimal
+- Melakukan standarisasi terhadap fitur `view` dan `publish_hour`.
+
+**Tujuan:** Menyamakan skala fitur numerik untuk mencegah dominasi fitur tertentu dalam proses training model.
 
 ## Modeling
 
@@ -298,7 +320,7 @@ Gambar visual menunjukkan perbandingan nilai MSE antara data train dan test dari
 - **Random Forest** menunjukkan kemampuan belajar pola yang lebih baik (train MSE rendah), tapi ada gap cukup besar dengan test MSE, menunjukkan adanya potensi overfitting.
 - Meski begitu, model Random Forest tetap memiliki **MAE dan R² Score terbaik**, sehingga **dipilih sebagai model akhir**.
 
-## Kesimpulan Akhir
+### Kesimpulan Akhir
 
 Pada proyek ini, dilakukan prediksi terhadap estimasi durasi menonton (`watch_time_proxy`) berdasarkan metadata video YouTube. Proses dilakukan melalui tahapan:
 
@@ -315,4 +337,41 @@ Insight tambahan:
 - Fitur `publish_hour`, `category_name`, dan engagement proxy terbukti berkontribusi besar terhadap prediksi
 - Random Forest memiliki potensi overfitting, sehingga tuning lanjutan bisa dilakukan di masa depan
 
-Proyek ini dapat dikembangkan lebih lanjut dengan menggunakan durasi tonton aktual, menambahkan analisis NLP dari deskripsi video, dan eksplorasi hyperparameter tuning untuk meningkatkan performa model.
+---
+
+#### Apakah sudah menjawab Problem Statement?
+
+1. **Prediksi durasi tonton berdasarkan karakteristik konten:**  
+   Model Random Forest berhasil memprediksi durasi tonton (`watch_time_proxy`) dengan **MAE sebesar 57.145** dan **R² sebesar 0.86**. Ini menunjukkan bahwa karakteristik seperti views, likes, publish hour, dan category_name berkontribusi signifikan terhadap prediksi durasi tonton.
+
+2. **Pengaruh waktu publikasi dan kategori video:**  
+   Fitur `publish_hour` dan `category_name` telah diikutsertakan dalam proses modeling dan terbukti berpengaruh terhadap hasil prediksi. Ini menjawab bahwa waktu publikasi dan kategori video memang relevan terhadap durasi tonton.
+
+3. **Strategi meningkatkan performa konten:**  
+   Insight dari analisis fitur mengindikasikan bahwa memilih waktu unggah yang optimal dan kategori yang sesuai dapat meningkatkan potensi watch time video, sesuai dengan strategi peningkatan performa konten yang diharapkan.
+
+---
+
+#### Apakah sudah mencapai Goals?
+
+1. **Membangun model regresi:**  
+   Model regresi berhasil dibangun dan diuji, dengan Random Forest dipilih sebagai model terbaik setelah dibandingkan dengan Linear Regression.
+
+2. **Menemukan fitur berpengaruh:**  
+   Analisis menunjukkan bahwa fitur `publish_hour`, `category_name`, dan kombinasi engagement metrics (`likes`, `comments`, `views`) merupakan fitur yang paling berpengaruh terhadap prediksi.
+
+3. **Memberikan insight untuk strategi konten:**  
+   Berdasarkan hasil evaluasi, insight yang dihasilkan dari model dapat digunakan oleh kreator dan marketer untuk mengoptimalkan strategi publikasi konten.
+
+---
+
+#### Apakah solusi statement berdampak?
+
+- **Feature engineering** terhadap waktu publikasi dan kategori terbukti efektif dalam meningkatkan kualitas model prediksi.
+- **Penggunaan Random Forest** berhasil memberikan performa prediksi yang lebih baik dibandingkan baseline Linear Regression.
+- Evaluasi dengan metrik **MAE dan R²** menunjukkan bahwa solusi yang direncanakan berdampak positif terhadap capaian proyek.
+
+---
+
+**Kesimpulan:**  
+Model yang dibangun tidak hanya mencapai performa prediktif yang baik, tetapi juga berhasil mendukung pencapaian seluruh problem statement, goals, dan solution statement yang telah ditentukan di tahap Business Understanding.
